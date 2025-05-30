@@ -24,10 +24,14 @@ toff = 60.0  # Time when parameter change occurs
 u0 = [1.0, 0.0, 0.0, 0.0]  # Initial conditions
 
 D = 40.0 # um^2/s
-c = 10.0 # uM
+c_in_microMolar = 10.0 # uM
+uMum3 = 602.2 # Conversion factor for uM to particles per um^3
+c = c_in_microMolar * uMum3  # Convert to particles per um^3
 l = 0.01 # um
 R = 0.005 # um
-uMum3 = 602.2 # Conversion factor for uM to particles per um^3
+
+alpha=1e-3
+
 
 # Two parameter sets
 param_sets = [
@@ -42,7 +46,7 @@ param_sets = [
     #     kon_tethered = 4*pi*R*D*1/(2*pi*l^2)^(3/2),
     # ),
     ComponentArray(
-        kon = 4*pi*D*c/uMum3,
+        kon = alpha*4*pi*R*D*c,
         koff = 100.0,
         kon_tethered = 4*pi*R*D*1/(2*pi*l^2)^(3/2),
     ),

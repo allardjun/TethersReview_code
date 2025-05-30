@@ -16,24 +16,27 @@ function ode_system!(du, u, p, t)
 end
 
 # Parameters and initial conditions
-tspan = (0.0, 120.0)
-toff = 60.0  # Time when parameter change occurs
+tspan = (0.0, 20.0)
+toff = 10.0  # Time when parameter change occurs
 u0 = [1.0, 0.0]  # Initial conditions
 
-D = 40.0 # um^2/s
-c = 10.0 # uM
-# l = 0.01 # um
+D = 10.0 # um^2/s
+c_in_microMolar = 1.0 # uM
+uMum3 = 602.2 # Conversion factor for uM to particles per um^3
+c = c_in_microMolar * uMum3  # Convert to particles per um^3
 R = 0.005 # um
 uMum3 = 602.2 # Conversion factor for uM to particles per um^3
+
+alpha=1e-4
 
 # Two parameter sets
 param_sets = [
     ComponentArray(
-        kon = 4*pi*R*D*c/uMum3,
-        koff = 0.2,
+        kon = alpha*4*pi*R*D*c,
+        koff = 2.0,
     ),
     ComponentArray(
-        kon = 4*pi*R*D*c/uMum3,
+        kon = alpha*4*pi*R*D*c,
         koff = 0.001,
     ),
 ]
@@ -69,12 +72,12 @@ for (i, base_params) in enumerate(param_sets)
     # Split integration at toff to handle parameter change
     # Phase 1: t = 0 to toff
     prob1 = ODEProblem(ode_system!, u0, (0.0, toff), params_func(0.0))
-    sol1 = solve(prob1, Tsit5(), saveat=0.1)
+    sol1 = solve(prob1, Tsit5(), saveat=0.01)
     
     # Phase 2: t = toff to end (using final state from phase 1)
     u_mid = sol1.u[end]
     prob2 = ODEProblem(ode_system!, u_mid, (toff, tspan[2]), params_func(toff + 0.1))
-    sol2 = solve(prob2, Tsit5(), saveat=0.1)
+    sol2 = solve(prob2, Tsit5(), saveat=0.01)
     
     # Combine solutions
     t_combined = vcat(sol1.t, sol2.t[2:end])  # Avoid duplicate at toff
