@@ -18,19 +18,19 @@ function ode_system!(du, u, p, t)
     du[:] = transition_matrix * u 
 end
 
-# Parameters and initial conditions
+# Parameters 
 tspan = (0.0, 120.0)
 toff = 60.0  # Time when parameter change occurs
-u0 = [1.0, 0.0, 0.0, 0.0]  # Initial conditions
 
-D = 40.0 # um^2/s
-c_in_microMolar = 10.0 # uM
+D = 10.0 # um^2/s
+c_in_microMolar = 20.0 # uM
 uMum3 = 602.2 # Conversion factor for uM to particles per um^3
 c = c_in_microMolar * uMum3  # Convert to particles per um^3
-l = 0.01 # um
 R = 0.005 # um
 
-alpha=1e-3
+l = 0.01 # um, tether length
+
+alpha=1e-4
 
 
 # Two parameter sets
@@ -47,8 +47,8 @@ param_sets = [
     # ),
     ComponentArray(
         kon = alpha*4*pi*R*D*c,
-        koff = 100.0,
-        kon_tethered = 4*pi*R*D*1/(2*pi*l^2)^(3/2),
+        koff = 1.0,
+        kon_tethered = alpha*4*pi*R*D*(3/(2*pi*l^2))^(3/2),
     ),
 ]
 
@@ -58,6 +58,7 @@ function create_time_varying_params(base_params, toff)
         p = copy(base_params)
         if t >= toff
             p.kon = 0.0
+            p.kon_tethered = 0.0
         end
         return p
     end
@@ -68,6 +69,9 @@ end
 solutions = []
 labels = ["Parameter Set 1", "Parameter Set 2", "Parameter Set 3"]
 colors = [colorant"#1f77b4", colorant"#ff7f0e", colorant"#ff7f0e"]
+
+u0 = [1.0, 0.0, 0.0, 0.0]  # Initial conditions
+
 
 # Solve for both parameter sets
 for (i, base_params) in enumerate(param_sets)
@@ -121,7 +125,7 @@ for (j, sol) in enumerate(solutions)
 end
 
 # Add vertical line at parameter change time
-vlines!(ax, [toff], color=:red, linestyle=:dash, alpha=0.7, linewidth=2)
+vlines!(ax, [toff], color=:green, linestyle=:dash, alpha=0.7, linewidth=2)
 
 # Add legend to first subplot
 # if i == 1

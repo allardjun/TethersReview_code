@@ -15,17 +15,15 @@ function ode_system!(du, u, p, t)
     du[2] = -koff*uon + kon*uoff
 end
 
-# Parameters and initial conditions
-tspan = (0.0, 20.0)
-toff = 10.0  # Time when parameter change occurs
-u0 = [1.0, 0.0]  # Initial conditions
+# Parameters 
+tspan = (0.0, 120.0)
+toff = 60.0  # Time when parameter change occurs
 
 D = 10.0 # um^2/s
-c_in_microMolar = 1.0 # uM
+c_in_microMolar = 20.0 # uM
 uMum3 = 602.2 # Conversion factor for uM to particles per um^3
 c = c_in_microMolar * uMum3  # Convert to particles per um^3
 R = 0.005 # um
-uMum3 = 602.2 # Conversion factor for uM to particles per um^3
 
 alpha=1e-4
 
@@ -37,7 +35,7 @@ param_sets = [
     ),
     ComponentArray(
         kon = alpha*4*pi*R*D*c,
-        koff = 0.001,
+        koff = 0.005,
     ),
 ]
 
@@ -57,6 +55,9 @@ end
 solutions = []
 labels = ["Parameter Set 1", "Parameter Set 2"]
 colors = [colorant"#1f77b4", colorant"#ff7f0e"]
+
+u0 = [1.0, 0.0]  # Initial conditions
+
 
 # Solve for both parameter sets
 for (i, base_params) in enumerate(param_sets)
@@ -110,7 +111,7 @@ for (j, sol) in enumerate(solutions)
 end
 
 # Add vertical line at parameter change time
-vlines!(ax, [toff], color=:red, linestyle=:dash, alpha=0.7, linewidth=2)
+vlines!(ax, [toff], color=:green, linestyle=:dash, alpha=0.7, linewidth=2)
 
 # Add legend to first subplot
 # if i == 1
