@@ -20,22 +20,24 @@ tspan = (0.0, 120.0)
 toff = 60.0  # Time when parameter change occurs
 
 D = 10.0 # um^2/s
-c_in_microMolar = 20.0 # uM
+c_in_microMolar = 0.1 # uM
 uMum3 = 602.2 # Conversion factor for uM to particles per um^3
 c = c_in_microMolar * uMum3  # Convert to particles per um^3
 R = 0.005 # um
 
-alpha=1e-4
+alpha=1e-2
+
+kon_rate = alpha*4*pi*R*D  # Binding rate constant
 
 # Two parameter sets
 param_sets = [
     ComponentArray(
-        kon = alpha*4*pi*R*D*c,
-        koff = 2.0,
+        kon = kon_rate*c,
+        koff = 1.0,
     ),
     ComponentArray(
-        kon = alpha*4*pi*R*D*c,
-        koff = 0.005,
+        kon = kon_rate*c,
+        koff = 0.01,
     ),
 ]
 

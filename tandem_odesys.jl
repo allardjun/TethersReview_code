@@ -23,14 +23,16 @@ tspan = (0.0, 120.0)
 toff = 60.0  # Time when parameter change occurs
 
 D = 10.0 # um^2/s
-c_in_microMolar = 20.0 # uM
+c_in_microMolar = 0.1 # uM
 uMum3 = 602.2 # Conversion factor for uM to particles per um^3
 c = c_in_microMolar * uMum3  # Convert to particles per um^3
 R = 0.005 # um
 
-l = 0.01 # um, tether length
+alpha=1e-2
 
-alpha=1e-4
+kon_rate = alpha*4*pi*R*D  # Binding rate constant
+
+l = 0.01 # um, tether length
 
 
 # Two parameter sets
@@ -46,9 +48,9 @@ param_sets = [
     #     kon_tethered = 4*pi*R*D*1/(2*pi*l^2)^(3/2),
     # ),
     ComponentArray(
-        kon = alpha*4*pi*R*D*c,
+        kon = kon_rate*c,
         koff = 1.0,
-        kon_tethered = alpha*4*pi*R*D*(3/(2*pi*l^2))^(3/2),
+        kon_tethered = kon_rate*(3/(2*pi*l^2))^(3/2),
     ),
 ]
 
@@ -144,4 +146,4 @@ vlines!(ax, [toff], color=:green, linestyle=:dash, alpha=0.7, linewidth=2)
 display(fig)
 
 # Export to vectorized PDF
-save("fig_monovalent.pdf", fig, pt_per_unit=1)
+save("fig_tandem.pdf", fig, pt_per_unit=1)
