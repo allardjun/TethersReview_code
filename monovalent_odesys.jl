@@ -20,7 +20,7 @@ tspan = (0.0, 120.0)
 toff = 60.0  # Time when parameter change occurs
 u0 = [1.0, 0.0]  # Initial conditions
 
-D = 20.0 # um^2/s
+D = 40.0 # um^2/s
 c = 10.0 # uM
 # l = 0.01 # um
 R = 0.005 # um
@@ -30,11 +30,11 @@ uMum3 = 602.2 # Conversion factor for uM to particles per um^3
 param_sets = [
     ComponentArray(
         kon = 4*pi*R*D*c/uMum3,
-        koff = 0.1,
+        koff = 0.2,
     ),
     ComponentArray(
         kon = 4*pi*R*D*c/uMum3,
-        koff = 0.005,
+        koff = 0.001,
     ),
 ]
 
