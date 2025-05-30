@@ -3,48 +3,38 @@ using CairoMakie
 using Colors
 using ComponentArrays
 
+# Define the ODE system (Extended Lotka-Volterra with additional dynamics)
 function ode_system!(du, u, p, t)
     # Parameters
-    kon, koff, kon_tethered = p
-
-    transition_matrix = [
-        -2*kon  koff  koff  0.0;
-         kon   -koff-kon_tethered  0.0  +koff;
-         kon    kon_tethered  -koff-kon_tethered  +koff;
-         0.0    0.0  kon_tethered  -2*koff
-    ]
-
+    kon, koff = p
+    
+    uoff, uon = u
+    
     # System of 4 coupled ODEs
-    du[:] = transition_matrix * u 
+    du[1] = +koff*uon - kon*uoff
+    du[2] = -koff*uon + kon*uoff
 end
 
 # Parameters and initial conditions
 tspan = (0.0, 120.0)
 toff = 60.0  # Time when parameter change occurs
-u0 = [1.0, 0.0, 0.0, 0.0]  # Initial conditions
+u0 = [1.0, 0.0]  # Initial conditions
 
-D = 40.0 # um^2/s
+D = 20.0 # um^2/s
 c = 10.0 # uM
-l = 0.01 # um
+# l = 0.01 # um
 R = 0.005 # um
 uMum3 = 602.2 # Conversion factor for uM to particles per um^3
 
 # Two parameter sets
 param_sets = [
-    # ComponentArray(
-    #     kon = 0.1,
-    #     koff = 0.1,
-    #     kon_tethered = 0.1,
-    # ),
-    # ComponentArray(
-    #     kon = 4*pi*R*D*c/uMum3,
-    #     koff = 0.1,
-    #     kon_tethered = 4*pi*R*D*1/(2*pi*l^2)^(3/2),
-    # ),
     ComponentArray(
-        kon = 4*pi*D*c/uMum3,
-        koff = 100.0,
-        kon_tethered = 4*pi*R*D*1/(2*pi*l^2)^(3/2),
+        kon = 4*pi*R*D*c/uMum3,
+        koff = 0.1,
+    ),
+    ComponentArray(
+        kon = 4*pi*R*D*c/uMum3,
+        koff = 0.005,
     ),
 ]
 
@@ -62,8 +52,8 @@ end
 
 # Storage for solutions
 solutions = []
-labels = ["Parameter Set 1", "Parameter Set 2", "Parameter Set 3"]
-colors = [colorant"#1f77b4", colorant"#ff7f0e", colorant"#ff7f0e"]
+labels = ["Parameter Set 1", "Parameter Set 2"]
+colors = [colorant"#1f77b4", colorant"#ff7f0e"]
 
 # Solve for both parameter sets
 for (i, base_params) in enumerate(param_sets)
@@ -79,12 +69,12 @@ for (i, base_params) in enumerate(param_sets)
     # Split integration at toff to handle parameter change
     # Phase 1: t = 0 to toff
     prob1 = ODEProblem(ode_system!, u0, (0.0, toff), params_func(0.0))
-    sol1 = solve(prob1, Rosenbrock23(), saveat=0.1)
+    sol1 = solve(prob1, Tsit5(), saveat=0.1)
     
     # Phase 2: t = toff to end (using final state from phase 1)
     u_mid = sol1.u[end]
     prob2 = ODEProblem(ode_system!, u_mid, (toff, tspan[2]), params_func(toff + 0.1))
-    sol2 = solve(prob2, Rosenbrock23(), saveat=0.1)
+    sol2 = solve(prob2, Tsit5(), saveat=0.1)
     
     # Combine solutions
     t_combined = vcat(sol1.t, sol2.t[2:end])  # Avoid duplicate at toff
@@ -98,7 +88,7 @@ fig = Figure(size=(600, 400))
 
 # Define y-axis limits
 y_limits = (0, 1)
-title = "Tandem binding"
+title = "Monovalent binding"
 
 ax = Makie.Axis(fig[1,1], 
         title=title,
@@ -109,7 +99,7 @@ ax = Makie.Axis(fig[1,1],
     
 # Plot solutions for both parameter sets
 for (j, sol) in enumerate(solutions)
-    u_values = [u[2].+u[3].+u[4] for u in sol.u]
+    u_values = [u[2] for u in sol.u]
     lines!(ax, sol.t, u_values, 
             color=colors[j],
             linewidth=2.5,

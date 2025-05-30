@@ -3,12 +3,11 @@ using CairoMakie
 using Random
 using Statistics
 
-function brownian_bridge_2d_projected(x_start, x_end, T_end, delta, N; seed=123)
+function brownian_bridge_2d_projected(x_end, T_end, delta, N; seed=123)
     """
     Simulate a 2D Brownian Bridge with displacement projection.
     
     Parameters:
-    - x_start: starting position [x, y]
     - x_end: target ending position [x, y] 
     - T_end: total time
     - delta: prescribed displacement magnitude for each segment
@@ -25,6 +24,8 @@ function brownian_bridge_2d_projected(x_start, x_end, T_end, delta, N; seed=123)
     D = delta^2 / 6           # Diffusion coefficient
     delta_t = T_end / N       # Time step duration
     
+    x_start = [0.0, 0.0]      # Starting position
+
     # Initialize arrays
     times = range(0, T_end, length=N+1)
     trajectory = zeros(2, N+1)
@@ -73,11 +74,11 @@ function brownian_bridge_2d_projected(x_start, x_end, T_end, delta, N; seed=123)
     return times, trajectory
 end
 
-function plot_trajectory(times, trajectory, x_start, x_end, delta)
+function plot_trajectory(times, trajectory, x_end, delta)
     """
     Plot the 2D trajectory with line segments.
     """
-    fig = Figure(resolution = (900, 700))
+    fig = Figure(size = (900, 700))
     ax = Makie.Axis(fig[1, 1], 
               xlabel = "x", 
               ylabel = "y", 
@@ -88,6 +89,8 @@ function plot_trajectory(times, trajectory, x_start, x_end, delta)
     lines!(ax, trajectory[1, :], trajectory[2, :], 
            color = :blue, linewidth = 2, label = "Trajectory")
     
+    x_start = trajectory[:, 1]
+
     # Mark start and end points
     scatter!(ax, [x_start[1]], [x_start[2]], 
              color = :green, markersize = 20, 
@@ -128,10 +131,10 @@ begin
     x_end = [5.0, 3.0]        # Target ending position  
     N = 100                    # Number of time segments
     T_end = N              # Total time
-    delta = 0.5               # Prescribed displacement magnitude
+    delta = 1.0               # Prescribed displacement magnitude
     
     println("Simulation Parameters:")
-    println("- Start: $x_start")
+    # println("- Start: $x_start")
     println("- Target End: $x_end") 
     println("- Total Time: $T_end")
     println("- Delta: $delta")
@@ -140,10 +143,10 @@ begin
     println()
     
     # Run simulation
-    times, trajectory = brownian_bridge_2d_projected(x_start, x_end, T_end, delta, N)
+    times, trajectory = brownian_bridge_2d_projected(x_end, T_end, delta, N)
     
     # Create plot
-    fig = plot_trajectory(times, trajectory, x_start, x_end, delta)
+    fig = plot_trajectory(times, trajectory, x_end, delta)
     
     # Display the figure
     display(fig)
