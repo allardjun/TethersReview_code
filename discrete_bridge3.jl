@@ -128,10 +128,10 @@ end
 begin
     # Parameters
     x_start = [0.0, 0.0]      # Starting position
-    x_end = [5.0, 3.0]        # Target ending position  
-    N = 100                    # Number of time segments
+    x_end = [1.2, 0.1]        # Target ending position  
+    N = 60                    # Number of time segments
     T_end = N              # Total time
-    delta = 1.0               # Prescribed displacement magnitude
+    delta = 0.1               # Prescribed displacement magnitude
     
     println("Simulation Parameters:")
     # println("- Start: $x_start")
@@ -151,6 +151,9 @@ begin
     # Display the figure
     display(fig)
     
+    # Save the figure to a file
+    save("brownian_bridge_2d_projected.pdf", fig)
+
     # Calculate final distance from target
     final_distance = norm(trajectory[:, end] - x_end)
     println("\nFinal distance from target: $(round(final_distance, digits=4))")
