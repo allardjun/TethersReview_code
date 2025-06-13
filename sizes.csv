@@ -1,0 +1,6 @@
+filename,x_end_x,x_end_y,delta,N,seed
+short_path,0.5,0.2,0.1,30,123
+long_path,1.5,0.8,0.05,100,456
+curved_path,0.8,1.2,0.15,50,789
+straight_line,2.0,0.0,0.2,40,101
+zigzag,1.0,1.0,0.08,80,202
