@@ -32,6 +32,8 @@ Batch processing system that:
 - Processes multiple parameter sets automatically
 - Generates individual PDF figures for each parameter set
 - Uses Figure/Panel naming convention for output files
+- Supports uniform axis limits across all figures
+- Optional trajectory-only mode for clean publication figures
 
 ### `sizes.csv`
 Parameter file containing simulation configurations:
@@ -51,7 +53,12 @@ julia> include("discrete_bridge3.jl")
 
 ### Batch Processing
 ```julia
-julia> include("batch_brownian_bridge.jl")
+# Standard mode with all markers and legend
+julia> batch_generate_brownian_bridges("sizes.csv")
+
+# Clean trajectory-only mode (no markers or legend)
+julia> batch_generate_brownian_bridges("sizes.csv"; trajectory_only=true)
+
 # Processes all parameter sets in sizes.csv
 # Generates individual PDFs: fig_1_A.pdf, fig_2_A.pdf, etc.
 ```
@@ -76,12 +83,10 @@ julia> include("batch_brownian_bridge.jl")
 ## Output
 
 Each simulation generates:
-1. **PDF plot** showing the complete trajectory with:
-   - Blue trajectory line
-   - Green start point marker
-   - Red target endpoint marker
-   - Purple actual endpoint marker
-   - Orange projection points
+1. **PDF plot** showing the trajectory:
+   - **Standard mode**: Black trajectory line with green start marker, red target marker, purple actual end marker, and orange projection points
+   - **Trajectory-only mode**: Clean black trajectory line only (no markers or legend)
+   - **Uniform scaling**: All batch-generated figures use identical axis limits for easy comparison
 2. **Console statistics** including displacement magnitude verification and final distance from target
 
 ## Applications

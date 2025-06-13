@@ -75,7 +75,7 @@ function brownian_bridge_2d_projected(x_end, delta, N; seed=123)
     return times, trajectory
 end
 
-function plot_trajectory(trajectory, x_end, delta; axis_limits=nothing)
+function plot_trajectory(trajectory, x_end, delta; axis_limits=nothing, trajectory_only=false)
     """
     Plot the 2D trajectory with line segments.
     
@@ -84,6 +84,7 @@ function plot_trajectory(trajectory, x_end, delta; axis_limits=nothing)
     - x_end: target ending position [x, y]
     - delta: displacement magnitude
     - axis_limits: optional uniform axis limits (default: auto-scale)
+    - trajectory_only: if true, plot only the trajectory line without markers (default: false)
     """
     fig = Figure(size = (900, 700))
     ax = Makie.Axis(fig[1, 1], 
@@ -94,27 +95,30 @@ function plot_trajectory(trajectory, x_end, delta; axis_limits=nothing)
     
     # Plot trajectory as connected line segments
     lines!(ax, trajectory[1, :], trajectory[2, :], 
-           color = :blue, linewidth = 2, label = "Trajectory")
+           color = :black, linewidth = 2, label = "Trajectory")
     
-    x_start = trajectory[:, 1]
+    # Add markers only if not trajectory_only mode
+    if !trajectory_only
+        x_start = trajectory[:, 1]
 
-    # Mark start and end points
-    scatter!(ax, [x_start[1]], [x_start[2]], 
-             color = :green, markersize = 20, 
-             marker = :circle, label = "Start")
-    scatter!(ax, [x_end[1]], [x_end[2]], 
-             color = :red, markersize = 20, 
-             marker = :star5, label = "Target End")
-    
-    # Mark actual end point
-    scatter!(ax, [trajectory[1, end]], [trajectory[2, end]], 
-             color = :purple, markersize = 15, 
-             marker = :diamond, label = "Actual End")
-    
-    # Mark all projection points (every delta_t)
-    scatter!(ax, trajectory[1, :], trajectory[2, :], 
-             color = :orange, markersize = 8, 
-             alpha = 0.7, label = "Projection Points")
+        # Mark start and end points
+        scatter!(ax, [x_start[1]], [x_start[2]], 
+                 color = :green, markersize = 20, 
+                 marker = :circle, label = "Start")
+        scatter!(ax, [x_end[1]], [x_end[2]], 
+                 color = :red, markersize = 20, 
+                 marker = :star5, label = "Target End")
+        
+        # Mark actual end point
+        scatter!(ax, [trajectory[1, end]], [trajectory[2, end]], 
+                 color = :purple, markersize = 15, 
+                 marker = :diamond, label = "Actual End")
+        
+        # Mark all projection points (every delta_t)
+        scatter!(ax, trajectory[1, :], trajectory[2, :], 
+                 color = :orange, markersize = 8, 
+                 alpha = 0.7, label = "Projection Points")
+    end
     
     # Set axis limits if provided
     if axis_limits !== nothing
@@ -122,9 +126,11 @@ function plot_trajectory(trajectory, x_end, delta; axis_limits=nothing)
         ylims!(ax, -axis_limits, axis_limits)
     end
     
-    # Add grid and legend
+    # Add grid and legend (only show legend if not trajectory_only)
     # ax.grid = true
-    axislegend(ax, position = :lt)
+    if !trajectory_only
+        axislegend(ax, position = :lt)
+    end
     
     # Display displacement magnitudes for verification
     displacements = [norm(trajectory[:, i] - trajectory[:, i-1]) for i in 2:size(trajectory, 2)]
@@ -161,7 +167,7 @@ begin
     fig = plot_trajectory(trajectory, x_end, delta)
     
     # Display the figure
-    display(fig)
+    # display(fig)
     
     # Save the figure to a file
     save("brownian_bridge_2d_projected.pdf", fig)

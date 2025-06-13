@@ -8,17 +8,22 @@ using DataFrames
 
 include("discrete_bridge3.jl")
 
-function batch_generate_brownian_bridges(input_file::String)
+function batch_generate_brownian_bridges(input_file::String; trajectory_only::Bool=false)
     """
     Read parameters from xlsx or csv file and generate PDF for each row.
     
-    Expected format:
-    - Column 1: filename (base name for PDF)
-    - Column 2: x_end_x (x-coordinate of target end)
-    - Column 3: x_end_y (y-coordinate of target end)
-    - Column 4: delta (displacement magnitude)
-    - Column 5: N (number of segments)
-    - Column 6: seed (random seed, optional)
+    Parameters:
+    - input_file: CSV file containing simulation parameters
+    - trajectory_only: if true, plot only trajectory lines without markers (default: false)
+    
+    Expected CSV format:
+    - Column 1: Figure (figure number)
+    - Column 2: Panel (panel identifier)
+    - Column 3: x_end_x (x-coordinate of target end)
+    - Column 4: x_end_y (y-coordinate of target end)
+    - Column 5: delta (displacement magnitude)
+    - Column 6: N (number of segments)
+    - Column 7: seed (random seed, optional)
     """
     
     println("Reading parameters from: $input_file")
@@ -85,7 +90,7 @@ function batch_generate_brownian_bridges(input_file::String)
             times, trajectory = brownian_bridge_2d_projected(x_end, delta, N)
             
             # Create plot with uniform axis limits
-            fig = plot_trajectory(trajectory, x_end, delta; axis_limits=max_axis_limit)
+            fig = plot_trajectory(trajectory, x_end, delta; axis_limits=max_axis_limit, trajectory_only=trajectory_only)
             
             # Save with filename combining Figure and Panel columns
             pdf_filename = "fig_$(figure_num)_$(panel_name).pdf"
@@ -110,4 +115,7 @@ end
 
 
 # For REPL debugging - call this function directly
-batch_generate_brownian_bridges("sizes.csv")
+# batch_generate_brownian_bridges("sizes.csv")
+
+# Example usage with trajectory_only mode:
+batch_generate_brownian_bridges("sizes.csv"; trajectory_only=true)
