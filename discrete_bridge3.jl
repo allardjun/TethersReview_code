@@ -3,7 +3,7 @@ using CairoMakie
 using Random
 using Statistics
 
-function brownian_bridge_2d_projected(x_end, T_end, delta, N; seed=123)
+function brownian_bridge_2d_projected(x_end, delta, N; seed=123)
     """
     Simulate a 2D Brownian Bridge with displacement projection.
     
@@ -22,7 +22,8 @@ function brownian_bridge_2d_projected(x_end, T_end, delta, N; seed=123)
     
     # Parameters
     D = delta^2 / 6           # Diffusion coefficient
-    delta_t = T_end / N       # Time step duration
+    T_end = delta*N
+    # delta_t = T_end / N       # Time step duration
     
     x_start = [0.0, 0.0]      # Starting position
 
@@ -47,10 +48,10 @@ function brownian_bridge_2d_projected(x_end, T_end, delta, N; seed=123)
         end
         
         # Generate 2D Wiener increment: sqrt(delta_t) * randn(2)
-        dW = sqrt(delta_t) * randn(2)
+        dW = sqrt(delta) * randn(2)
         
         # Brownian bridge step: dx = drift*dt + sqrt(2D)*dW
-        dx = drift * delta_t + sqrt(2*D) * dW
+        dx = drift * delta + sqrt(2*D) * dW
         x_candidate = x_prev + dx
         
         # Project displacement from last projection point to have magnitude exactly delta
@@ -74,7 +75,7 @@ function brownian_bridge_2d_projected(x_end, T_end, delta, N; seed=123)
     return times, trajectory
 end
 
-function plot_trajectory(times, trajectory, x_end, delta)
+function plot_trajectory(trajectory, x_end, delta)
     """
     Plot the 2D trajectory with line segments.
     """
@@ -136,17 +137,16 @@ begin
     println("Simulation Parameters:")
     # println("- Start: $x_start")
     println("- Target End: $x_end") 
-    println("- Total Time: $T_end")
     println("- Delta: $delta")
     println("- Number of segments: $N")
     println("- Diffusion coefficient D = l_K²/6 = $(delta^2/6)")
     println()
     
     # Run simulation
-    times, trajectory = brownian_bridge_2d_projected(x_end, T_end, delta, N)
+    times, trajectory = brownian_bridge_2d_projected(x_end, delta, N)
     
     # Create plot
-    fig = plot_trajectory(times, trajectory, x_end, delta)
+    fig = plot_trajectory(trajectory, x_end, delta)
     
     # Display the figure
     display(fig)
