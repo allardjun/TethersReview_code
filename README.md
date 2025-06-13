@@ -12,19 +12,21 @@ This Julia project implements a specialized Brownian bridge simulation that:
 
 ## Core Algorithm
 
-The simulation uses a modified Brownian bridge approach:
+The simulation uses a discrete Brownian bridge approach with adaptive biasing:
 
-- **Brownian Bridge Drift**: At each step, applies a drift term `(x_end - x_current) / (T_remaining)` to bias the trajectory toward the target
-- **Displacement Projection**: Projects each step to have exactly magnitude `delta`, preserving the direction but enforcing the constraint
-- **Diffusion Coefficient**: Uses `D = delta²/6` based on the relationship between step size and diffusion
+- **Adaptive Drift**: Computes drift strength as `distance_to_target / (delta * steps_remaining)`, providing stronger bias when far from target with few steps remaining
+- **Direction Combination**: Blends drift direction toward target with random direction: `drift_strength * drift_direction + sqrt(1 - drift_strength²) * random_direction`
+- **Stability Control**: Clamps drift strength to [0.0, 0.9] to prevent numerical instabilities
+- **Fixed Step Size**: Every step has exactly magnitude `delta` by construction
+- **Error Correction**: Redistributes final positioning error over the last few steps to ensure exact target hitting
 
 ## Files
 
 ### `discrete_bridge3.jl`
 Core simulation engine containing:
-- `brownian_bridge_2d_projected()`: Main simulation function
-- `plot_trajectory()`: Visualization function
-- Example simulation with default parameters
+- `discrete_brownian_bridge_2d()`: Main simulation function implementing adaptive biased random walk
+- `plot_trajectory()`: Visualization function with support for trajectory-only mode
+- Commented example simulation with default parameters
 
 ### `batch_brownian_bridge.jl`
 Batch processing system that:
@@ -76,9 +78,8 @@ julia> batch_generate_brownian_bridges("sizes.csv"; trajectory_only=true)
 
 - **x_end**: Target endpoint `[x, y]` coordinates
 - **delta**: Fixed displacement magnitude per step (tether length)
-- **N**: Number of trajectory segments
-- **T_end**: Total simulation time (automatically set to `delta * N`)
-- **D**: Diffusion coefficient (automatically calculated as `delta²/6`)
+- **N**: Number of trajectory steps
+- **seed**: Random seed for reproducible results
 
 ## Output
 
@@ -91,4 +92,4 @@ Each simulation generates:
 
 ## Applications
 
-This simulation is designed for analyzing molecular tethers and constrained random walks in biological systems, where the physical constraint of tether length must be maintained while studying the statistical properties of the resulting trajectories.
+This simulation is designed for analyzing molecular tethers and constrained random walks in biological systems. The improved discrete Brownian bridge model provides more accurate bridge conditioning while maintaining the physical constraint that each step has exactly the prescribed magnitude (representing tether length). This makes it particularly suitable for studying polymer dynamics, protein conformational changes, and other biophysical processes with length constraints.

@@ -87,7 +87,8 @@ function batch_generate_brownian_bridges(input_file::String; trajectory_only::Bo
             println("  Parameters: x_end=$x_end, delta=$delta, N=$N")
             
             # Run simulation
-            times, trajectory = brownian_bridge_2d_projected(x_end, delta, N)
+            # times, trajectory = brownian_bridge_2d_projected(x_end, delta, N)
+            times, trajectory = discrete_brownian_bridge_2d(x_end, delta, N)
             
             # Create plot with uniform axis limits
             fig = plot_trajectory(trajectory, x_end, delta; axis_limits=max_axis_limit, trajectory_only=trajectory_only)

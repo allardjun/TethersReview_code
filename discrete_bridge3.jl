@@ -3,73 +3,83 @@ using CairoMakie
 using Random
 using Statistics
 
-function brownian_bridge_2d_projected(x_end, delta, N; seed=123)
+function discrete_brownian_bridge_2d(x_end, delta, N; seed=123)
     """
-    Simulate a 2D Brownian Bridge with displacement projection.
+    Simulate a 2D discrete Brownian Bridge with fixed step size.
+    Uses a bias in the random walk direction based on bridge conditioning.
     
     Parameters:
-    - x_end: target ending position [x, y] 
-    - T_end: total time
-    - delta: prescribed displacement magnitude for each segment
-    - N: number of time segments
-    - seed: random seed for reproducibility
+    - x_end: target ending position [x, y]
+    - delta: step size
+    - N: number of steps
+    - seed: random seed
     
     Returns:
     - times: time points
     - trajectory: 2×(N+1) array of positions
     """
-    # Random.seed!(seed)
+    Random.seed!(seed)
     
-    # Parameters
-    D = delta^2 / 6           # Diffusion coefficient
-    T_end = delta*N
-    # delta_t = T_end / N       # Time step duration
+    x_start = [0.0, 0.0]
     
-    x_start = [0.0, 0.0]      # Starting position
-
     # Initialize arrays
-    times = range(0, T_end, length=N+1)
+    times = range(0, N, length=N+1)
     trajectory = zeros(2, N+1)
     trajectory[:, 1] = x_start
     
-    # Track the last projection point for displacement calculation
-    last_projection_point = copy(x_start)
-    
     for i in 2:N+1
-        t_prev = times[i-1]
-        x_prev = trajectory[:, i-1]
+        x_current = trajectory[:, i-1]
+        steps_remaining = N - (i - 1)
         
-        # Brownian bridge drift term: (x_end - x) / (T_end - t)
-        remaining_time = T_end - t_prev
-        if remaining_time > 1e-10
-            drift = (x_end - x_prev) / remaining_time
+        if steps_remaining == 0
+            # Last step: go directly to target
+            trajectory[:, i] = x_end
         else
-            drift = [0.0, 0.0]
+            # Vector pointing toward the target
+            to_target = x_end - x_current
+            distance_to_target = norm(to_target)
+            
+            if distance_to_target < 1e-10
+                # Already at target, pure random walk
+                angle = 2π * rand()
+                direction = [cos(angle), sin(angle)]
+            else
+                # Compute drift direction
+                drift_direction = to_target / distance_to_target
+                
+                # Compute drift strength based on how many steps we have left
+                # and how far we need to go
+                drift_strength = distance_to_target / (delta * steps_remaining)
+                
+                # Clamp drift strength to prevent instability
+                drift_strength = clamp(drift_strength, 0.0, 0.9)
+                
+                # Generate random direction
+                angle = 2π * rand()
+                random_direction = [cos(angle), sin(angle)]
+                
+                # Combine drift and random components
+                direction = drift_strength * drift_direction + 
+                           sqrt(1 - drift_strength^2) * random_direction
+                direction = direction / norm(direction)
+            end
+            
+            # Take step of size delta
+            trajectory[:, i] = x_current + delta * direction
         end
-        
-        # Generate 2D Wiener increment: sqrt(delta_t) * randn(2)
-        dW = sqrt(delta) * randn(2)
-        
-        # Brownian bridge step: dx = drift*dt + sqrt(2D)*dW
-        dx = drift * delta + sqrt(2*D) * dW
-        x_candidate = x_prev + dx
-        
-        # Project displacement from last projection point to have magnitude exactly delta
-        displacement = x_candidate - last_projection_point
-        displacement_magnitude = norm(displacement)
-        
-        if displacement_magnitude > 1e-12
-            # Scale displacement to have magnitude exactly delta
-            x_new = last_projection_point + delta * (displacement / displacement_magnitude)
-        else
-            # If displacement is essentially zero, choose random direction
-            random_direction = randn(2)
-            random_direction = random_direction / norm(random_direction)
-            x_new = last_projection_point + delta * random_direction
+    end
+    
+    # Adjust the last few steps to ensure we exactly hit the target
+    # This is a simple correction that redistributes the error
+    if norm(trajectory[:, N+1] - x_end) > 1e-10
+        error_vec = x_end - trajectory[:, N+1]
+        # Distribute error over last few steps
+        correction_steps = min(5, N)
+        for j in (N+1-correction_steps+1):N+1
+            weight = (j - (N+1-correction_steps)) / correction_steps
+            trajectory[:, j] += weight * error_vec
         end
-        
-        trajectory[:, i] = x_new
-        last_projection_point = copy(x_new)
+        trajectory[:, N+1] = x_end
     end
     
     return times, trajectory
@@ -143,36 +153,36 @@ function plot_trajectory(trajectory, x_end, delta; axis_limits=nothing, trajecto
     return fig
 end
 
-# Example usage and simulation
-begin
-    # Parameters
-    x_start = [0.0, 0.0]      # Starting position
-    x_end = [1.2, 0.1]        # Target ending position  
-    N = 60                    # Number of time segments
-    T_end = N              # Total time
-    delta = 0.1               # Prescribed displacement magnitude
+# # Example usage and simulation
+# begin
+#     # Parameters
+#     x_start = [0.0, 0.0]      # Starting position
+#     x_end = [1.2, 0.1]        # Target ending position  
+#     N = 60                    # Number of time segments
+#     T_end = N              # Total time
+#     delta = 0.1               # Prescribed displacement magnitude
     
-    println("Simulation Parameters:")
-    # println("- Start: $x_start")
-    println("- Target End: $x_end") 
-    println("- Delta: $delta")
-    println("- Number of segments: $N")
-    println("- Diffusion coefficient D = l_K²/6 = $(delta^2/6)")
-    println()
+#     println("Simulation Parameters:")
+#     # println("- Start: $x_start")
+#     println("- Target End: $x_end") 
+#     println("- Delta: $delta")
+#     println("- Number of segments: $N")
+#     println("- Diffusion coefficient D = l_K²/6 = $(delta^2/6)")
+#     println()
     
-    # Run simulation
-    times, trajectory = brownian_bridge_2d_projected(x_end, delta, N)
+#     # Run simulation
+#     times, trajectory = brownian_bridge_2d_projected(x_end, delta, N)
     
-    # Create plot
-    fig = plot_trajectory(trajectory, x_end, delta)
+#     # Create plot
+#     fig = plot_trajectory(trajectory, x_end, delta)
     
-    # Display the figure
-    # display(fig)
+#     # Display the figure
+#     # display(fig)
     
-    # Save the figure to a file
-    save("brownian_bridge_2d_projected.pdf", fig)
+#     # Save the figure to a file
+#     save("brownian_bridge_2d_projected.pdf", fig)
 
-    # Calculate final distance from target
-    final_distance = norm(trajectory[:, end] - x_end)
-    println("\nFinal distance from target: $(round(final_distance, digits=4))")
-end
+#     # Calculate final distance from target
+#     final_distance = norm(trajectory[:, end] - x_end)
+#     println("\nFinal distance from target: $(round(final_distance, digits=4))")
+# end
