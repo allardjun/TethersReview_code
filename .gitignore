@@ -1,3 +1,7 @@
+## Project-specific
+*.pdf
+
+
 ## --- MacOS ---
 
 # Ignore DS_Store files
