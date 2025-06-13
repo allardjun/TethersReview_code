@@ -37,6 +37,16 @@ function batch_generate_brownian_bridges(input_file::String)
     
     println("Found $(nrow(df)) parameter sets to process")
     println("Headers: $(join(headers, ", "))")
+    
+    # Compute maximum axis limit for consistent scaling across all figures
+    valid_rows = findall(i -> !ismissing(df.Figure[i]) && string(df.Figure[i]) != "", 1:nrow(df))
+    if !isempty(valid_rows)
+        max_axis_limit = maximum(Float64(df.delta[i]) * parse(Int, string(df.N[i])) for i in valid_rows)
+        println("Using uniform axis limits: ±$(round(max_axis_limit, digits=2))")
+    else
+        max_axis_limit = nothing
+        println("No valid rows found, using auto-scaling")
+    end
     println()
     
     # Process each row
@@ -74,8 +84,8 @@ function batch_generate_brownian_bridges(input_file::String)
             # Run simulation
             times, trajectory = brownian_bridge_2d_projected(x_end, delta, N)
             
-            # Create plot
-            fig = plot_trajectory(trajectory, x_end, delta)
+            # Create plot with uniform axis limits
+            fig = plot_trajectory(trajectory, x_end, delta; axis_limits=max_axis_limit)
             
             # Save with filename combining Figure and Panel columns
             pdf_filename = "fig_$(figure_num)_$(panel_name).pdf"

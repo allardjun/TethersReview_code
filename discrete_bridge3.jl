@@ -75,9 +75,15 @@ function brownian_bridge_2d_projected(x_end, delta, N; seed=123)
     return times, trajectory
 end
 
-function plot_trajectory(trajectory, x_end, delta)
+function plot_trajectory(trajectory, x_end, delta; axis_limits=nothing)
     """
     Plot the 2D trajectory with line segments.
+    
+    Parameters:
+    - trajectory: 2×(N+1) array of positions
+    - x_end: target ending position [x, y]
+    - delta: displacement magnitude
+    - axis_limits: optional uniform axis limits (default: auto-scale)
     """
     fig = Figure(size = (900, 700))
     ax = Makie.Axis(fig[1, 1], 
@@ -109,6 +115,12 @@ function plot_trajectory(trajectory, x_end, delta)
     scatter!(ax, trajectory[1, :], trajectory[2, :], 
              color = :orange, markersize = 8, 
              alpha = 0.7, label = "Projection Points")
+    
+    # Set axis limits if provided
+    if axis_limits !== nothing
+        xlims!(ax, -axis_limits, axis_limits)
+        ylims!(ax, -axis_limits, axis_limits)
+    end
     
     # Add grid and legend
     # ax.grid = true
