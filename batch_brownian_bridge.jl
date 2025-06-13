@@ -24,16 +24,16 @@ function batch_generate_brownian_bridges(input_file::String)
     println("Reading parameters from: $input_file")
     
     # Read the file based on extension
-    if endswith(input_file, ".csv")
-        df = CSV.read(input_file, DataFrame)
-        headers = names(df)
-    elseif endswith(input_file, ".xlsx")
-        xf = XLSX.readtable(input_file, "Sheet1", header=true)
-        df = DataFrame(xf[1])  # Convert to DataFrame
-        headers = xf[2]  # Column names
-    else
-        error("Unsupported file format. Use .csv or .xlsx")
-    end
+    # if endswith(input_file, ".csv")
+    df = CSV.read(input_file, DataFrame)
+    headers = names(df)
+    # elseif endswith(input_file, ".xlsx")
+    #     xf = XLSX.readtable(input_file, "Sheet1", header=true)
+    #     df = DataFrame(xf[1])  # Convert to DataFrame
+    #     headers = xf[2]  # Column names
+    # else
+    #     error("Unsupported file format. Use .csv or .xlsx")
+    # end
     
     println("Found $(nrow(df)) parameter sets to process")
     println("Headers: $(join(headers, ", "))")
@@ -41,18 +41,31 @@ function batch_generate_brownian_bridges(input_file::String)
     
     # Process each row
     for i in 1:nrow(df)
-        println("Processing row $i: $(df.filename[i])")
+        # Skip blank rows (check if Figure column is missing or empty)
+        if ismissing(df.Figure[i]) || string(df.Figure[i]) == ""
+            println("Skipping blank row $i")
+            continue
+        end
+        
+        println("Processing row $i: $(df.Figure[i])_$(df.Panel[i])")
         
         try
+
+            @show df[i,:]
+
             # Extract parameters
-            filename = string(df.filename[i])
+            figure_num = string(df.Figure[i])
+            panel_name = string(df.Panel[i])
             x_end = [Float64(df.x_end_x[i]), Float64(df.x_end_y[i])]
             delta = Float64(df.delta[i])
-            N = Int(df.N[i])
+            @show df.N[i]
+            @show typeof(df.N[i])
+            N = parse(Int, string(df.N[i]))
+
             
             # Handle optional seed
             if "seed" in names(df) && !ismissing(df.seed[i])
-                Random.seed!(Int(df.seed[i]))
+                Random.seed!(parse(Int, string(df.seed[i])))
                 println("  Using seed: $(df.seed[i])")
             end
             
@@ -64,8 +77,8 @@ function batch_generate_brownian_bridges(input_file::String)
             # Create plot
             fig = plot_trajectory(trajectory, x_end, delta)
             
-            # Save with filename from spreadsheet (prefixed with "fig_")
-            pdf_filename = "fig_$(filename).pdf"
+            # Save with filename combining Figure and Panel columns
+            pdf_filename = "fig_$(figure_num)_$(panel_name).pdf"
             save(pdf_filename, fig)
             println("  Saved: $pdf_filename")
             
@@ -84,27 +97,7 @@ function batch_generate_brownian_bridges(input_file::String)
     println("Batch processing complete!")
 end
 
-# Example usage
-if abspath(PROGRAM_FILE) == @__FILE__
-    # Try CSV first, then xlsx
-    input_files = ["sizes.csv", "sizes.xlsx"]
-    
-    for input_file in input_files
-        if isfile(input_file)
-            println("Found $input_file - using this file")
-            batch_generate_brownian_bridges(input_file)
-            break
-        end
-    end
-    
-    if !any(isfile.(input_files))
-        println("Error: No input file found!")
-        println("Please create either sizes.csv or sizes.xlsx with the expected format:")
-        println("  Column 1: filename")
-        println("  Column 2: x_end_x") 
-        println("  Column 3: x_end_y")
-        println("  Column 4: delta")
-        println("  Column 5: N")
-        println("  Column 6: seed (optional)")
-    end
-end
+
+
+# For REPL debugging - call this function directly
+batch_generate_brownian_bridges("sizes.csv")
